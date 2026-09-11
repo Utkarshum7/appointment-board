@@ -6,12 +6,22 @@ into the backend, and an accessible, responsive UI on top of it.
 
 Built as a technical assignment for Appening Infotech (Full Stack Developer Intern).
 
-**Repository:** https://github.com/Utkarshum7/appointment-board (public)
-**Live frontend:** https://comforting-pony-8b8dc5.netlify.app
-**Live backend:** https://appointment-board-api-qcdn.onrender.com ([`/health`](https://appointment-board-api-qcdn.onrender.com/health), [`/docs`](https://appointment-board-api-qcdn.onrender.com/docs))
+## Live Demo
 
-Both verified live and working end-to-end — see [Section 22](#22-deployment) for the full
-verification record and architecture.
+**🔗 Live Application: https://comforting-pony-8b8dc5.netlify.app**
+
+**Backend API:** https://appointment-board-api-qcdn.onrender.com
+([`/health`](https://appointment-board-api-qcdn.onrender.com/health) ·
+[`/docs`](https://appointment-board-api-qcdn.onrender.com/docs))
+
+**Repository:** https://github.com/Utkarshum7/appointment-board (public)
+
+Both URLs are verified live and working end-to-end — see [Section 22](#22-deployment) for
+the full deployment architecture and verification record.
+
+> The backend runs on Render's free tier, which spins down after 15 minutes of inactivity.
+> If the app has been idle, the first load or action may take up to ~50 seconds while it
+> wakes back up — this is expected, not a bug.
 
 ## 1. Project Overview
 
