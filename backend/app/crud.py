@@ -1,6 +1,5 @@
 from typing import Optional
 
-from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from app.models import Appointment, AppointmentStatus

@@ -10,17 +10,22 @@ function formatDate(value) {
   });
 }
 
-export default function AppointmentCard({ appointment, onEdit, onCancel, onComplete, busy }) {
+const STATUS_LABELS = {
+  scheduled: "Scheduled",
+  completed: "Completed",
+  cancelled: "Cancelled",
+};
+
+export default function AppointmentCard({ appointment, onEdit, onCancel, onComplete, busyAction }) {
   const { title, description, date, start_time, end_time, status } = appointment;
-  const canEdit = status === "scheduled";
-  const canComplete = status === "scheduled";
-  const canCancel = status === "scheduled";
+  const canAct = status === "scheduled";
+  const isBusy = Boolean(busyAction);
 
   return (
-    <div className={`appointment-card status-${status}`}>
+    <article className={`appointment-card status-${status}`} aria-label={title}>
       <div className="appointment-card-header">
         <h3>{title}</h3>
-        <span className={`status-badge status-${status}`}>{status}</span>
+        <span className={`status-badge status-${status}`}>{STATUS_LABELS[status]}</span>
       </div>
 
       {description && <p className="appointment-description">{description}</p>}
@@ -32,28 +37,24 @@ export default function AppointmentCard({ appointment, onEdit, onCancel, onCompl
         </span>
       </div>
 
-      <div className="appointment-actions">
-        {canEdit && (
-          <button type="button" onClick={() => onEdit(appointment)} disabled={busy}>
+      {canAct && (
+        <div className="appointment-actions">
+          <button type="button" onClick={() => onEdit(appointment)} disabled={isBusy}>
             Edit
           </button>
-        )}
-        {canComplete && (
-          <button type="button" onClick={() => onComplete(appointment)} disabled={busy}>
-            Complete
+          <button type="button" onClick={() => onComplete(appointment)} disabled={isBusy}>
+            {busyAction === "complete" ? "Completing…" : "Complete"}
           </button>
-        )}
-        {canCancel && (
           <button
             type="button"
             className="btn-danger"
             onClick={() => onCancel(appointment)}
-            disabled={busy}
+            disabled={isBusy}
           >
-            Cancel
+            {busyAction === "cancel" ? "Cancelling…" : "Cancel"}
           </button>
-        )}
-      </div>
-    </div>
+        </div>
+      )}
+    </article>
   );
 }

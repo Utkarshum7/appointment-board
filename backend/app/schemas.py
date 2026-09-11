@@ -21,6 +21,13 @@ class AppointmentBase(BaseModel):
             raise ValueError("Title is required")
         return value.strip()
 
+    @field_validator("description", mode="before")
+    @classmethod
+    def normalize_description(cls, value):
+        if value is None:
+            return ""
+        return value.strip()
+
     @model_validator(mode="after")
     def end_after_start(self):
         if self.end_time <= self.start_time:

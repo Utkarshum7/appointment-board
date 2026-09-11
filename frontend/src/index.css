@@ -10,7 +10,7 @@
   --color-success: #1c8a4b;
   --color-scheduled: #2f6fed;
   --color-completed: #1c8a4b;
-  --color-cancelled: #8a8f98;
+  --color-cancelled: #52525b;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
@@ -41,6 +41,14 @@ button:hover:not(:disabled) {
 button:disabled {
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .btn-primary {
@@ -90,6 +98,12 @@ button:disabled {
   margin: 0;
 }
 
+.app-subtitle {
+  margin: 0.25rem 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
 .filters {
   display: flex;
   align-items: flex-end;
@@ -121,20 +135,52 @@ button:disabled {
   font-size: 0.9rem;
 }
 
+.board-summary {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  margin: 0 0 0.75rem;
+}
+
 .board-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 1rem;
 }
 
 .board-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
   text-align: center;
   color: var(--color-text-muted);
   padding: 3rem 1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.board-message p {
+  margin: 0;
 }
 
 .board-error {
   color: var(--color-danger);
+}
+
+.spinner {
+  width: 22px;
+  height: 22px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .appointment-card {
@@ -154,7 +200,12 @@ button:disabled {
 
 .appointment-card.status-cancelled {
   border-left-color: var(--color-cancelled);
-  opacity: 0.75;
+  background: #f8f8f9;
+}
+
+.appointment-card.status-cancelled .appointment-card-header h3 {
+  text-decoration: line-through;
+  color: var(--color-text-muted);
 }
 
 .appointment-card-header {
@@ -230,6 +281,13 @@ button:disabled {
 
 .modal h2 {
   margin-top: 0;
+  margin-bottom: 0.25rem;
+}
+
+.modal-hint {
+  margin: 0 0 1.2rem;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
 }
 
 .form-field {
@@ -317,5 +375,16 @@ button:disabled {
 @media (max-width: 480px) {
   .form-row {
     flex-direction: column;
+  }
+
+  .app-header {
+    align-items: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+    border-top-color: var(--color-border);
   }
 }

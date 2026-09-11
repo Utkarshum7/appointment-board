@@ -1,5 +1,6 @@
 import os
 from contextlib import asynccontextmanager
+from datetime import date as date_cls
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException
@@ -26,9 +27,19 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Appointment Board API", lifespan=lifespan)
+app = FastAPI(
+    title="Appointment Board API",
+    description="Backend for a small team's appointment board.",
+    version="1.0.0",
+    lifespan=lifespan,
+)
 
-allowed_origins = os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")
+# Split on commas and drop blanks/whitespace so a trailing comma or stray space in the
+# CORS_ORIGINS env var (easy to introduce when configuring a deployment platform) doesn't
+# silently produce an invalid origin or lock out the real frontend.
+_raw_origins = os.getenv("CORS_ORIGINS", "http://localhost:5173")
+allowed_origins = [origin.strip() for origin in _raw_origins.split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
@@ -37,7 +48,13 @@ app.add_middleware(
 )
 
 
-@app.get("/appointments", response_model=list[AppointmentOut])
+@app.get("/health", tags=["health"])
+def health_check():
+    """Used by deployment platforms to confirm the service is up."""
+    return {"status": "ok"}
+
+
+@app.get("/appointments", response_model=list[AppointmentOut], tags=["appointments"])
 def list_appointments(
     date: str | None = None,
     status: AppointmentStatus | None = None,
@@ -45,8 +62,6 @@ def list_appointments(
 ):
     parsed_date = None
     if date:
-        from datetime import date as date_cls
-
         try:
             parsed_date = date_cls.fromisoformat(date)
         except ValueError:
@@ -54,7 +69,7 @@ def list_appointments(
     return crud.get_appointments(db, date=parsed_date, status=status)
 
 
-@app.get("/appointments/{appointment_id}", response_model=AppointmentOut)
+@app.get("/appointments/{appointment_id}", response_model=AppointmentOut, tags=["appointments"])
 def get_appointment(appointment_id: str, db: Session = Depends(get_db)):
     appointment = crud.get_appointment(db, appointment_id)
     if not appointment:
@@ -62,7 +77,7 @@ def get_appointment(appointment_id: str, db: Session = Depends(get_db)):
     return appointment
 
 
-@app.post("/appointments", response_model=AppointmentOut, status_code=201)
+@app.post("/appointments", response_model=AppointmentOut, status_code=201, tags=["appointments"])
 def create_appointment(data: AppointmentCreate, db: Session = Depends(get_db)):
     conflict = crud.find_conflict(db, data.date, data.start_time, data.end_time)
     if conflict:
@@ -74,7 +89,7 @@ def create_appointment(data: AppointmentCreate, db: Session = Depends(get_db)):
     return crud.create_appointment(db, data)
 
 
-@app.put("/appointments/{appointment_id}", response_model=AppointmentOut)
+@app.put("/appointments/{appointment_id}", response_model=AppointmentOut, tags=["appointments"])
 def update_appointment(
     appointment_id: str, data: AppointmentUpdate, db: Session = Depends(get_db)
 ):
@@ -98,7 +113,9 @@ def update_appointment(
     return crud.update_appointment(db, appointment, data)
 
 
-@app.patch("/appointments/{appointment_id}/cancel", response_model=AppointmentOut)
+@app.patch(
+    "/appointments/{appointment_id}/cancel", response_model=AppointmentOut, tags=["appointments"]
+)
 def cancel_appointment(appointment_id: str, db: Session = Depends(get_db)):
     appointment = crud.get_appointment(db, appointment_id)
     if not appointment:
@@ -110,7 +127,9 @@ def cancel_appointment(appointment_id: str, db: Session = Depends(get_db)):
     return crud.set_status(db, appointment, AppointmentStatus.cancelled)
 
 
-@app.patch("/appointments/{appointment_id}/complete", response_model=AppointmentOut)
+@app.patch(
+    "/appointments/{appointment_id}/complete", response_model=AppointmentOut, tags=["appointments"]
+)
 def complete_appointment(appointment_id: str, db: Session = Depends(get_db)):
     appointment = crud.get_appointment(db, appointment_id)
     if not appointment:

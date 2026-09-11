@@ -6,6 +6,7 @@ from app.models import Appointment, AppointmentStatus
 
 today = date.today()
 tomorrow = today + timedelta(days=1)
+day_after = today + timedelta(days=2)
 
 SAMPLE_APPOINTMENTS = [
     dict(
@@ -46,6 +47,14 @@ SAMPLE_APPOINTMENTS = [
         date=tomorrow,
         start_time=time(10, 0),
         end_time=time(10, 30),
+        status=AppointmentStatus.scheduled,
+    ),
+    dict(
+        title="Portfolio review",
+        description="Walk through Q3 deliverables with stakeholders.",
+        date=day_after,
+        start_time=time(13, 0),
+        end_time=time(13, 45),
         status=AppointmentStatus.scheduled,
     ),
 ]

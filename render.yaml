@@ -1,0 +1,38 @@
+# Render "Blueprint" for this project — deploys backend, frontend, and a free
+# Postgres database from one repo. Connect the repo at render.com/blueprints
+# and Render reads this file automatically.
+#
+# NOTE: this file was written by hand against Render's documented blueprint
+# format and has NOT been deployed or verified against a live Render account
+# in this environment (no Render account/CLI was available here). Check the
+# field names against Render's current docs (render.com/docs/blueprint-spec)
+# before relying on it, and expect to fill in the frontend's real URL for
+# CORS_ORIGINS once Render assigns it.
+databases:
+  - name: appointment-board-db
+    plan: free
+
+services:
+  - type: web
+    name: appointment-board-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: appointment-board-db
+          property: connectionString
+      - key: CORS_ORIGINS
+        value: https://appointment-board-frontend.onrender.com
+
+  - type: web
+    name: appointment-board-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://appointment-board-api.onrender.com

@@ -27,12 +27,12 @@ class Appointment(Base):
 
     id = Column(String, primary_key=True, default=generate_id)
     title = Column(String, nullable=False)
-    description = Column(String, nullable=True, default="")
-    date = Column(Date, nullable=False)
+    description = Column(String, nullable=False, default="")
+    date = Column(Date, nullable=False, index=True)
     start_time = Column(Time, nullable=False)
     end_time = Column(Time, nullable=False)
     status = Column(
-        Enum(AppointmentStatus), nullable=False, default=AppointmentStatus.scheduled
+        Enum(AppointmentStatus), nullable=False, default=AppointmentStatus.scheduled, index=True
     )
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)

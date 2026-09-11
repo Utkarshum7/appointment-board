@@ -1,8 +1,8 @@
 export default function Filters({ filters, onChange, onClear }) {
-  const hasActiveFilters = filters.date || filters.status;
+  const hasActiveFilters = Boolean(filters.date || filters.status);
 
   return (
-    <div className="filters">
+    <section className="filters" aria-label="Filter appointments">
       <div className="filter-field">
         <label htmlFor="filter-date">Date</label>
         <input
@@ -27,11 +27,14 @@ export default function Filters({ filters, onChange, onClear }) {
         </select>
       </div>
 
-      {hasActiveFilters && (
-        <button type="button" className="btn-link" onClick={onClear}>
-          Clear filters
-        </button>
-      )}
-    </div>
+      <button
+        type="button"
+        className="btn-link"
+        onClick={onClear}
+        disabled={!hasActiveFilters}
+      >
+        Clear filters
+      </button>
+    </section>
   );
 }

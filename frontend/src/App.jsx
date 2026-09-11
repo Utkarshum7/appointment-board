@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "./api";
 import Board from "./components/Board";
 import Filters from "./components/Filters";
@@ -14,19 +14,25 @@ export default function App() {
   const [filters, setFilters] = useState(emptyFilters);
   const [formState, setFormState] = useState(null); // { mode: "add" | "edit", appointment? }
   const [submitting, setSubmitting] = useState(false);
-  const [busyId, setBusyId] = useState(null);
+  const [busyAction, setBusyAction] = useState(null); // { id, action: "cancel" | "complete" }
   const [toast, setToast] = useState(null);
 
+  const toastTimeoutRef = useRef(null);
+  const requestIdRef = useRef(0);
+
   async function loadAppointments() {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     setLoadError("");
     try {
       const data = await api.list(filters);
+      if (requestId !== requestIdRef.current) return; // a newer filter change superseded this
       setAppointments(data);
     } catch (err) {
+      if (requestId !== requestIdRef.current) return;
       setLoadError(err.message);
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
   }
 
@@ -35,9 +41,14 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]);
 
+  useEffect(() => {
+    return () => clearTimeout(toastTimeoutRef.current);
+  }, []);
+
   function showToast(type, message) {
+    clearTimeout(toastTimeoutRef.current);
     setToast({ type, message });
-    setTimeout(() => setToast(null), 4000);
+    toastTimeoutRef.current = setTimeout(() => setToast(null), 4000);
   }
 
   async function handleCreate(data) {
@@ -66,7 +77,7 @@ export default function App() {
 
   async function handleCancel(appointment) {
     if (!window.confirm(`Cancel "${appointment.title}"? This cannot be undone.`)) return;
-    setBusyId(appointment.id);
+    setBusyAction({ id: appointment.id, action: "cancel" });
     try {
       await api.cancel(appointment.id);
       showToast("success", "Appointment cancelled.");
@@ -74,12 +85,12 @@ export default function App() {
     } catch (err) {
       showToast("error", err.message);
     } finally {
-      setBusyId(null);
+      setBusyAction(null);
     }
   }
 
   async function handleComplete(appointment) {
-    setBusyId(appointment.id);
+    setBusyAction({ id: appointment.id, action: "complete" });
     try {
       await api.complete(appointment.id);
       showToast("success", "Appointment marked as completed.");
@@ -87,16 +98,25 @@ export default function App() {
     } catch (err) {
       showToast("error", err.message);
     } finally {
-      setBusyId(null);
+      setBusyAction(null);
     }
   }
+
+  const hasActiveFilters = Boolean(filters.date || filters.status);
 
   return (
     <div className="app">
       <header className="app-header">
-        <h1>Appointment Board</h1>
-        <button type="button" className="btn-primary" onClick={() => setFormState({ mode: "add" })}>
-          Add Appointment
+        <div>
+          <h1>Appointment Board</h1>
+          <p className="app-subtitle">Track, schedule, and manage your team's appointments.</p>
+        </div>
+        <button
+          type="button"
+          className="btn-primary"
+          onClick={() => setFormState({ mode: "add" })}
+        >
+          + Add Appointment
         </button>
       </header>
 
@@ -106,10 +126,14 @@ export default function App() {
         appointments={appointments}
         loading={loading}
         error={loadError}
+        hasActiveFilters={hasActiveFilters}
+        onRetry={loadAppointments}
         onEdit={(appointment) => setFormState({ mode: "edit", appointment })}
         onCancel={handleCancel}
         onComplete={handleComplete}
-        busyId={busyId}
+        onClearFilters={() => setFilters(emptyFilters)}
+        onAddNew={() => setFormState({ mode: "add" })}
+        busyAction={busyAction}
       />
 
       {formState && (

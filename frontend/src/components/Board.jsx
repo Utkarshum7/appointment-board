@@ -1,30 +1,73 @@
 import AppointmentCard from "./AppointmentCard";
 
-export default function Board({ appointments, loading, error, onEdit, onCancel, onComplete, busyId }) {
+export default function Board({
+  appointments,
+  loading,
+  error,
+  hasActiveFilters,
+  onEdit,
+  onCancel,
+  onComplete,
+  onRetry,
+  onClearFilters,
+  onAddNew,
+  busyAction,
+}) {
   if (loading) {
-    return <p className="board-message">Loading appointments…</p>;
+    return (
+      <div className="board-message" role="status">
+        <span className="spinner" aria-hidden="true" />
+        <span>Loading appointments…</span>
+      </div>
+    );
   }
 
   if (error) {
-    return <p className="board-message board-error">{error}</p>;
+    return (
+      <div className="board-message board-error" role="alert">
+        <p>{error}</p>
+        <button type="button" onClick={onRetry}>
+          Try again
+        </button>
+      </div>
+    );
   }
 
   if (appointments.length === 0) {
-    return <p className="board-message">No appointments match the current filters.</p>;
+    return hasActiveFilters ? (
+      <div className="board-message">
+        <p>No appointments match the selected filters.</p>
+        <button type="button" onClick={onClearFilters}>
+          Clear filters
+        </button>
+      </div>
+    ) : (
+      <div className="board-message">
+        <p>No appointments yet.</p>
+        <button type="button" className="btn-primary" onClick={onAddNew}>
+          Add your first appointment
+        </button>
+      </div>
+    );
   }
 
   return (
-    <div className="board-grid">
-      {appointments.map((appointment) => (
-        <AppointmentCard
-          key={appointment.id}
-          appointment={appointment}
-          onEdit={onEdit}
-          onCancel={onCancel}
-          onComplete={onComplete}
-          busy={busyId === appointment.id}
-        />
-      ))}
+    <div>
+      <p className="board-summary">
+        Showing {appointments.length} appointment{appointments.length === 1 ? "" : "s"}
+      </p>
+      <div className="board-grid">
+        {appointments.map((appointment) => (
+          <AppointmentCard
+            key={appointment.id}
+            appointment={appointment}
+            onEdit={onEdit}
+            onCancel={onCancel}
+            onComplete={onComplete}
+            busyAction={busyAction?.id === appointment.id ? busyAction.action : null}
+          />
+        ))}
+      </div>
     </div>
   );
 }
