@@ -1,0 +1,20 @@
+# Optional: run PostgreSQL locally instead of the default SQLite file.
+# Start it with `docker compose up -d`, then set in backend/.env:
+#   DATABASE_URL=postgresql://appointments:appointments@localhost:5432/appointments
+#
+# The application code needs no changes to switch databases — SQLAlchemy
+# uses whatever DATABASE_URL points to.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: appointments
+      POSTGRES_PASSWORD: appointments
+      POSTGRES_DB: appointments
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
