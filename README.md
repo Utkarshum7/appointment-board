@@ -411,6 +411,16 @@ never committed to this repo):**
    Updated to the exact Netlify origin and redeployed; confirmed via a direct `OPTIONS`
    request that the response now carries
    `access-control-allow-origin: https://comforting-pony-8b8dc5.netlify.app`.
+5. **The Netlify site returned `401` to anyone without a Netlify login, even though it
+   loaded fine in the authenticated dashboard browser.** Root cause: Netlify's current
+   default for new projects sets Production visibility to "Private" (team-login-only) —
+   an access-control setting, unrelated to the build. Caught specifically because the app
+   was checked with a plain, cookie-less `curl` request in addition to the browser (the
+   browser session was already authenticated into Netlify, which masked the problem — a
+   reminder that "it loads for me" isn't proof it's public). Fixed via Project
+   configuration → Visitor access → Project visibility → **Public**. Reconfirmed
+   immediately after with the same `curl` command returning `200` with the real
+   `index.html`, not a login page.
 
 **Verification actually performed against the live stack** (not claimed, executed): all 16
 backend API checks in Section 19's style re-run against the live Render URL (create, missing
@@ -421,7 +431,9 @@ cancelled through the actual public Netlify UI end-to-end. Render's application 
 read directly and show zero unexpected errors — only the expected 200/201/409/422 sequence
 from these tests, plus the CORS-preflight 400s from before the CORS fix (expected, not a
 bug). A fresh, history-free browser tab was used to confirm no console errors on a clean load
-of the production frontend.
+of the production frontend. Both the frontend and backend URLs were also checked with plain
+`curl` (no cookies, no browser session) to confirm they are genuinely public, not just
+reachable from an already-authenticated dashboard session.
 
 **Known operational limitation:** Render's free instance spins down after 15 minutes of
 inactivity; the first request after idle can take up to ~50 seconds while it wakes up. This
