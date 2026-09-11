@@ -450,7 +450,7 @@ inactivity; the first request after idle can take up to ~50 seconds while it wak
 is a free-tier characteristic, not an application bug — documented here so it isn't mistaken
 for the app being broken during a demo.
 
-## 23. Interview-Critical Concepts
+## 23. Critical Concepts
 
 The parts of this project worth understanding cold before a follow-up interview:
 
