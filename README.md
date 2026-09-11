@@ -7,8 +7,11 @@ into the backend, and an accessible, responsive UI on top of it.
 Built as a technical assignment for Appening Infotech (Full Stack Developer Intern).
 
 **Repository:** https://github.com/Utkarshum7/appointment-board (public)
-**Live demo:** not yet deployed — see [Section 22](#22-deployment) for exact status and the
-remaining manual steps.
+**Live frontend:** https://comforting-pony-8b8dc5.netlify.app
+**Live backend:** https://appointment-board-api-qcdn.onrender.com ([`/health`](https://appointment-board-api-qcdn.onrender.com/health), [`/docs`](https://appointment-board-api-qcdn.onrender.com/docs))
+
+Both verified live and working end-to-end — see [Section 22](#22-deployment) for the full
+verification record and architecture.
 
 ## 1. Project Overview
 
@@ -45,7 +48,7 @@ overlap an existing appointment.
 |----------|--------|
 | Frontend | React 19 (Vite), plain CSS |
 | Backend  | Python, FastAPI, SQLAlchemy, Pydantic |
-| Database | SQLite by default (see [Section 8](#8-database-setup) for why), Postgres-ready |
+| Database | SQLite for local dev (see [Section 8](#8-database-setup)); **Neon PostgreSQL in production** |
 | Testing  | pytest + FastAPI's TestClient (31 tests) |
 
 No UI component library, no state management library, no ORM migrations tool — the app is
@@ -141,8 +144,9 @@ Neither `.env` file is committed; only the `.env.example` templates are.
 
 ## 9. Database Setup
 
-The assignment calls for PostgreSQL or MySQL. This app uses **SQLite by default** instead,
-and that's a deliberate, documented decision, not a shortcut taken silently:
+The assignment calls for PostgreSQL or MySQL. **Local development uses SQLite by default**,
+and the **deployed production backend actually runs against Neon PostgreSQL** (see
+[Section 22](#22-deployment)) — this was a deliberate, documented split, not a shortcut:
 
 - The database is accessed entirely through SQLAlchemy, so the only thing that changes
   between SQLite and Postgres is the `DATABASE_URL` string — the models, queries, and
@@ -353,61 +357,76 @@ and the conflict-error rendering path.
 
 ## 22. Deployment
 
-**Status: prepared, not yet live.** This environment has no authenticated hosting platform
-(Vercel/Netlify/Render/Railway/Fly CLIs were all checked — none installed or logged in; a
-valid AWS credential and a connected browser session were also checked — neither was
-available), so **no backend, frontend, or database has actually been deployed, and there is
-no live URL.** What actually was done: the code was pushed to a public GitHub repository
-(https://github.com/Utkarshum7/appointment-board), which is the real prerequisite every
-platform below deploys from. Everything past that point requires a human to authenticate
-into a hosting account, which cannot be done from here.
+**Status: live and verified.**
 
-**Production architecture (once deployed):**
+| Layer | Platform | URL |
+|---|---|---|
+| Frontend | Netlify | https://comforting-pony-8b8dc5.netlify.app |
+| Backend | Render (free Web Service) | https://appointment-board-api-qcdn.onrender.com |
+| Database | Neon (free, permanent Postgres) | connection string held only in Render's env vars |
+
+**Production architecture:**
 ```
-React static build (Vercel/Netlify/Render static site)
-        │  HTTPS, VITE_API_URL set to the backend's real URL at build time
+React static build (Netlify)
+        │  HTTPS, VITE_API_URL baked in at build time
         ▼
-FastAPI on a Python host (Render/Railway/Fly), reading $PORT from the platform
-        │  DATABASE_URL points at managed Postgres instead of the local SQLite file
+FastAPI on Render (free Web Service), reading $PORT from the platform
+        │  DATABASE_URL points at Neon Postgres
         ▼
-Managed PostgreSQL (Render Postgres / Neon / Supabase)
+Neon PostgreSQL (managed, free tier)
 ```
 
-**What's already in the repo, ready to use:**
-- `backend/Procfile` — `web: uvicorn app.main:app --host 0.0.0.0 --port $PORT`. The backend
-  never hardcodes a port; it binds to whatever the platform supplies.
-- `render.yaml` — a Render "Blueprint" defining the backend web service, the frontend static
-  site, and a free Postgres database in one file. **Not deployed or verified against a live
-  Render account** — written against Render's documented blueprint format as a starting
-  point; confirm field names against Render's current docs before relying on it.
-- The frontend build reads `VITE_API_URL` at build time and never hardcodes `localhost`
-  (verified by inspecting the built `dist/assets/*.js` bundle — see Section 19).
-- The backend reads `DATABASE_URL` and `CORS_ORIGINS` from the environment, so pointing it at
-  managed Postgres and a real frontend origin needs configuration only, no code changes.
+**Why this combination:** every platform here was chosen because it is genuinely free with
+no credit card, verified by checking each provider's current pricing page directly rather
+than assuming. Render's Blueprint flow (bundling a database) demanded payment details before
+provisioning anything, so the actual deployment uses a **standalone Render Web Service**
+instead (no `render.yaml`/Blueprint), pointed at an external Neon database — Render never
+provisioned a database itself, so it never asked for payment. `render.yaml` is kept in the
+repo for reference but was not the mechanism actually used.
 
-**Exact manual steps required (none could be performed from this environment):**
-1. Sign in to Render (or Railway/Fly) — an account is required and cannot be created on your
-   behalf here.
-2. Backend: new Web Service → connect the `appointment-board` GitHub repo → root directory
-   `backend` → build command `pip install -r requirements.txt` → start command
-   `uvicorn app.main:app --host 0.0.0.0 --port $PORT`. Add a managed Postgres instance
-   (Render's free tier, Neon, or Supabase) and set `DATABASE_URL` to its connection string.
-   Leave `CORS_ORIGINS` unset for now — it depends on the frontend URL from step 4.
-3. Confirm the backend deployed: open `<backend-url>/health` and expect `{"status":"ok"}`,
-   and `<backend-url>/appointments` and expect the six seeded appointments as JSON (the
-   backend seeds itself on first startup against the new, empty Postgres database).
-4. Frontend: new static site → same repo → root directory `frontend` → build command
-   `npm run build` → publish directory `dist` → env var `VITE_API_URL` = the backend URL
-   from step 3.
-5. Go back to the backend service and set `CORS_ORIGINS` to the frontend's exact deployed
-   origin (e.g. `https://appointment-board.onrender.com`, no trailing slash), then redeploy
-   the backend so the new value takes effect.
-6. Open the frontend URL and confirm the board loads, then exercise
-   create/edit/complete/cancel/filter once against the live backend before considering it
-   submission-ready.
+**Environment variables actually set (names only — see each provider's dashboard for values,
+never committed to this repo):**
+- Render: `DATABASE_URL`, `CORS_ORIGINS`, `PYTHON_VERSION`
+- Netlify: `VITE_API_URL`
 
-If you complete these steps and want this section updated with the real URLs, share them and
-they'll be added — they will not be fabricated here.
+**Two real deployment issues hit and fixed along the way:**
+1. **Build failed — `requirements.txt` not found.** Root cause: the Render service's Root
+   Directory setting was empty, so the build ran at the repo root instead of `backend/`.
+   Fixed by setting Root Directory to `backend` (Render dashboard setting, no code change).
+2. **Build failed — Rust compile error for `pydantic-core`.** Root cause: Render defaulted
+   new services to Python 3.14.3, which has no prebuilt wheel for `pydantic-core==2.23.4`;
+   pip fell back to compiling it from source via `maturin`, which fails in Render's build
+   sandbox (read-only Cargo cache). Fixed by setting `PYTHON_VERSION=3.12.7` (matching local
+   dev), which restored the prebuilt-wheel path — confirmed in the build log
+   (`pydantic_core-2.23.4-cp312-...whl` downloaded, not compiled). No code change.
+3. **Netlify published "Page not found."** Root cause: the Netlify site's Base directory,
+   Build command, and Publish directory were all unset, so it published the raw repository
+   checkout instead of running a Vite build. Confirmed via Netlify's deploy file browser,
+   which showed `backend/`, `frontend/`, `render.yaml`, etc. at the top level instead of a
+   built `index.html`. Fixed by setting Base directory `frontend`, Build command
+   `npm run build`, Publish directory `dist` (resolved to `frontend/dist`). Re-deployed and
+   confirmed the file browser now shows `dist/index.html` and `dist/assets/*`.
+4. **CORS blocked the first successful frontend load.** Expected and by design — Render's
+   `CORS_ORIGINS` was still the local dev placeholder until the real Netlify URL existed.
+   Updated to the exact Netlify origin and redeployed; confirmed via a direct `OPTIONS`
+   request that the response now carries
+   `access-control-allow-origin: https://comforting-pony-8b8dc5.netlify.app`.
+
+**Verification actually performed against the live stack** (not claimed, executed): all 16
+backend API checks in Section 19's style re-run against the live Render URL (create, missing
+fields, bad time range, overlap rejection, free-slot success, edit without self-conflict, edit
+into a genuine conflict, complete, cancel, cancelled-stays-visible, cancelled-slot-reuse, date
+filter, status filter) — all 16 passed. A real appointment was then created, verified, and
+cancelled through the actual public Netlify UI end-to-end. Render's application logs were
+read directly and show zero unexpected errors — only the expected 200/201/409/422 sequence
+from these tests, plus the CORS-preflight 400s from before the CORS fix (expected, not a
+bug). A fresh, history-free browser tab was used to confirm no console errors on a clean load
+of the production frontend.
+
+**Known operational limitation:** Render's free instance spins down after 15 minutes of
+inactivity; the first request after idle can take up to ~50 seconds while it wakes up. This
+is a free-tier characteristic, not an application bug — documented here so it isn't mistaken
+for the app being broken during a demo.
 
 ## 23. Interview-Critical Concepts
 
