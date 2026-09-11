@@ -6,6 +6,10 @@ into the backend, and an accessible, responsive UI on top of it.
 
 Built as a technical assignment for Appening Infotech (Full Stack Developer Intern).
 
+**Repository:** https://github.com/Utkarshum7/appointment-board (public)
+**Live demo:** not yet deployed — see [Section 22](#22-deployment) for exact status and the
+remaining manual steps.
+
 ## 1. Project Overview
 
 The app is a single board view. A team member can see every appointment, filter it down by
@@ -349,44 +353,61 @@ and the conflict-error rendering path.
 
 ## 22. Deployment
 
-This section documents what's been prepared for deployment and what was actually done. No
-hosting platform CLI or account was available in the environment this was built in (no
-Vercel/Netlify/Render/Railway/Fly CLI was installed or authenticated — verified by checking
-for each), so **nothing has been deployed, and there is no live URL** to share. What follows
-is a ready-to-use deployment path and the exact manual steps to finish it.
+**Status: prepared, not yet live.** This environment has no authenticated hosting platform
+(Vercel/Netlify/Render/Railway/Fly CLIs were all checked — none installed or logged in; a
+valid AWS credential and a connected browser session were also checked — neither was
+available), so **no backend, frontend, or database has actually been deployed, and there is
+no live URL.** What actually was done: the code was pushed to a public GitHub repository
+(https://github.com/Utkarshum7/appointment-board), which is the real prerequisite every
+platform below deploys from. Everything past that point requires a human to authenticate
+into a hosting account, which cannot be done from here.
 
-**What's already in place:**
-- `backend/Procfile` — `web: uvicorn app.main:app --host 0.0.0.0 --port $PORT`, the standard
-  start command most Python hosts (Render, Railway, Heroku-style buildpacks) look for.
-- `render.yaml` — a Render "Blueprint" that defines the backend web service, the frontend as
-  a static site, and a free Postgres database in one file. **This has not been deployed or
-  verified against a live Render account** — it's written against Render's documented
-  blueprint format as a starting point; check the field names against Render's current docs
-  before relying on it.
-- The frontend already builds cleanly for production (`npm run build` verified — see
-  Section 19) and reads its API base URL from `VITE_API_URL` at build time, so it never
-  hardcodes `localhost`.
-- The backend already reads its database and CORS configuration from environment variables,
-  so no code changes are needed to point it at a managed Postgres instance or a different
-  frontend origin.
+**Production architecture (once deployed):**
+```
+React static build (Vercel/Netlify/Render static site)
+        │  HTTPS, VITE_API_URL set to the backend's real URL at build time
+        ▼
+FastAPI on a Python host (Render/Railway/Fly), reading $PORT from the platform
+        │  DATABASE_URL points at managed Postgres instead of the local SQLite file
+        ▼
+Managed PostgreSQL (Render Postgres / Neon / Supabase)
+```
 
-**Manual steps to actually deploy (none of these could be done from this environment):**
-1. Push this repository to GitHub (the assignment doesn't require this, but Render/Railway/
-   Vercel/Netlify all deploy from a connected Git repo).
-2. Backend: create a Python web service on Render (or Railway/Fly) pointed at `backend/`,
-   with build command `pip install -r requirements.txt` and start command from the
-   `Procfile`. Set `DATABASE_URL` to a managed Postgres connection string and `CORS_ORIGINS`
-   to the frontend's deployed URL.
-3. Database: create a managed Postgres instance (Render's free Postgres, Neon, or Supabase
-   all work) and use its connection string as `DATABASE_URL` above.
-4. Frontend: create a static site on Render/Vercel/Netlify pointed at `frontend/`, build
-   command `npm run build`, publish directory `dist`, with `VITE_API_URL` set to the
-   backend's deployed URL.
-5. Verify: open the frontend URL, confirm the board loads sample data, and exercise
-   create/edit/complete/cancel/filter once against the live backend.
+**What's already in the repo, ready to use:**
+- `backend/Procfile` — `web: uvicorn app.main:app --host 0.0.0.0 --port $PORT`. The backend
+  never hardcodes a port; it binds to whatever the platform supplies.
+- `render.yaml` — a Render "Blueprint" defining the backend web service, the frontend static
+  site, and a free Postgres database in one file. **Not deployed or verified against a live
+  Render account** — written against Render's documented blueprint format as a starting
+  point; confirm field names against Render's current docs before relying on it.
+- The frontend build reads `VITE_API_URL` at build time and never hardcodes `localhost`
+  (verified by inspecting the built `dist/assets/*.js` bundle — see Section 19).
+- The backend reads `DATABASE_URL` and `CORS_ORIGINS` from the environment, so pointing it at
+  managed Postgres and a real frontend origin needs configuration only, no code changes.
 
-If you complete these steps and want the README updated with the real URLs, share them and
-they can be added — but they will not be fabricated here.
+**Exact manual steps required (none could be performed from this environment):**
+1. Sign in to Render (or Railway/Fly) — an account is required and cannot be created on your
+   behalf here.
+2. Backend: new Web Service → connect the `appointment-board` GitHub repo → root directory
+   `backend` → build command `pip install -r requirements.txt` → start command
+   `uvicorn app.main:app --host 0.0.0.0 --port $PORT`. Add a managed Postgres instance
+   (Render's free tier, Neon, or Supabase) and set `DATABASE_URL` to its connection string.
+   Leave `CORS_ORIGINS` unset for now — it depends on the frontend URL from step 4.
+3. Confirm the backend deployed: open `<backend-url>/health` and expect `{"status":"ok"}`,
+   and `<backend-url>/appointments` and expect the six seeded appointments as JSON (the
+   backend seeds itself on first startup against the new, empty Postgres database).
+4. Frontend: new static site → same repo → root directory `frontend` → build command
+   `npm run build` → publish directory `dist` → env var `VITE_API_URL` = the backend URL
+   from step 3.
+5. Go back to the backend service and set `CORS_ORIGINS` to the frontend's exact deployed
+   origin (e.g. `https://appointment-board.onrender.com`, no trailing slash), then redeploy
+   the backend so the new value takes effect.
+6. Open the frontend URL and confirm the board loads, then exercise
+   create/edit/complete/cancel/filter once against the live backend before considering it
+   submission-ready.
+
+If you complete these steps and want this section updated with the real URLs, share them and
+they'll be added — they will not be fabricated here.
 
 ## 23. Interview-Critical Concepts
 
