@@ -4,12 +4,20 @@ import Board from "./components/Board";
 import Filters from "./components/Filters";
 import AppointmentForm from "./components/AppointmentForm";
 import Toast from "./components/Toast";
+import ThemeToggle from "./components/ThemeToggle";
+import { useTheme } from "./useTheme";
 
 const emptyFilters = { date: "", status: "" };
 
+// How long a load can run before we tell the user it might be a free-tier cold start,
+// rather than leaving a generic spinner up with no explanation.
+const SLOW_LOAD_HINT_MS = 6000;
+
 export default function App() {
+  const { theme, toggleTheme } = useTheme();
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [slowLoad, setSlowLoad] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [filters, setFilters] = useState(emptyFilters);
   const [formState, setFormState] = useState(null); // { mode: "add" | "edit", appointment? }
@@ -18,12 +26,18 @@ export default function App() {
   const [toast, setToast] = useState(null);
 
   const toastTimeoutRef = useRef(null);
+  const slowLoadTimeoutRef = useRef(null);
   const requestIdRef = useRef(0);
 
   async function loadAppointments() {
     const requestId = ++requestIdRef.current;
     setLoading(true);
+    setSlowLoad(false);
     setLoadError("");
+    clearTimeout(slowLoadTimeoutRef.current);
+    slowLoadTimeoutRef.current = setTimeout(() => {
+      if (requestId === requestIdRef.current) setSlowLoad(true);
+    }, SLOW_LOAD_HINT_MS);
     try {
       const data = await api.list(filters);
       if (requestId !== requestIdRef.current) return; // a newer filter change superseded this
@@ -32,7 +46,11 @@ export default function App() {
       if (requestId !== requestIdRef.current) return;
       setLoadError(err.message);
     } finally {
-      if (requestId === requestIdRef.current) setLoading(false);
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+        setSlowLoad(false);
+        clearTimeout(slowLoadTimeoutRef.current);
+      }
     }
   }
 
@@ -42,7 +60,10 @@ export default function App() {
   }, [filters]);
 
   useEffect(() => {
-    return () => clearTimeout(toastTimeoutRef.current);
+    return () => {
+      clearTimeout(toastTimeoutRef.current);
+      clearTimeout(slowLoadTimeoutRef.current);
+    };
   }, []);
 
   function showToast(type, message) {
@@ -107,17 +128,20 @@ export default function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <div>
+        <div className="app-header-text">
           <h1>Appointment Board</h1>
           <p className="app-subtitle">Track, schedule, and manage your team's appointments.</p>
         </div>
-        <button
-          type="button"
-          className="btn-primary"
-          onClick={() => setFormState({ mode: "add" })}
-        >
-          + Add Appointment
-        </button>
+        <div className="app-header-actions">
+          <ThemeToggle theme={theme} onToggle={toggleTheme} />
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => setFormState({ mode: "add" })}
+          >
+            + Add Appointment
+          </button>
+        </div>
       </header>
 
       <Filters filters={filters} onChange={setFilters} onClear={() => setFilters(emptyFilters)} />
@@ -125,6 +149,7 @@ export default function App() {
       <Board
         appointments={appointments}
         loading={loading}
+        slowLoad={slowLoad}
         error={loadError}
         hasActiveFilters={hasActiveFilters}
         onRetry={loadAppointments}

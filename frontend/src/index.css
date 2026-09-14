@@ -1,17 +1,81 @@
+/*
+  Two families of color tokens, kept deliberately separate:
+  - "surface" tokens (bg/surface/border/text/muted/hover/shadow/link) are tuned per theme
+    for readability against that theme's background.
+  - "status" tokens (primary/success/danger-bg/scheduled/completed/cancelled) are almost
+    all used as a colored background with white text on top (buttons, badges, toasts), so
+    they're kept constant across themes — their contrast with white doesn't depend on the
+    page's own background, and changing them per theme would break that contrast instead
+    of improving anything.
+*/
 :root {
   --color-bg: #f5f6f8;
   --color-surface: #ffffff;
   --color-border: #e0e2e7;
   --color-text: #1f2430;
   --color-text-muted: #6b7280;
+  --color-link: #2f6fed;
+  --color-hover-bg: #f0f1f4;
+  --color-error-bg: #fdecea;
+  --color-cancelled-card-bg: #f8f8f9;
+  --color-overlay: rgba(15, 18, 25, 0.45);
+  --color-shadow: rgba(0, 0, 0, 0.15);
+  --color-card-shadow: rgba(20, 24, 32, 0.06);
+
+  /* Status/background tokens — constant across themes, see note above. */
   --color-primary: #2f6fed;
   --color-primary-dark: #234fb0;
   --color-danger: #d0342c;
+  --color-danger-bg: #c0291f;
   --color-success: #1c8a4b;
   --color-scheduled: #2f6fed;
   --color-completed: #1c8a4b;
   --color-cancelled: #52525b;
+
+  color-scheme: light dark;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Follow the system preference automatically until the user makes an explicit choice
+   (index.html sets data-theme before first paint whenever a choice was saved). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg: #15171c;
+    --color-surface: #1e2128;
+    --color-border: #333844;
+    --color-text: #eef0f3;
+    --color-text-muted: #a0a7b4;
+    --color-link: #8fabff;
+    --color-danger: #ff8f8f;
+    --color-hover-bg: #262a33;
+    --color-error-bg: #3a1f1f;
+    --color-cancelled-card-bg: #1a1c21;
+    --color-overlay: rgba(0, 0, 0, 0.6);
+    --color-shadow: rgba(0, 0, 0, 0.5);
+    --color-card-shadow: rgba(0, 0, 0, 0.3);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --color-bg: #15171c;
+  --color-surface: #1e2128;
+  --color-border: #333844;
+  --color-text: #eef0f3;
+  --color-text-muted: #a0a7b4;
+  --color-link: #8fabff;
+  --color-danger: #ff8f8f;
+  --color-hover-bg: #262a33;
+  --color-error-bg: #3a1f1f;
+  --color-cancelled-card-bg: #1a1c21;
+  --color-overlay: rgba(0, 0, 0, 0.6);
+  --color-shadow: rgba(0, 0, 0, 0.5);
+  --color-card-shadow: rgba(0, 0, 0, 0.3);
+  color-scheme: dark;
 }
 
 * {
@@ -22,6 +86,7 @@ body {
   margin: 0;
   background: var(--color-bg);
   color: var(--color-text);
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 button {
@@ -31,11 +96,13 @@ button {
   border-radius: 6px;
   border: 1px solid var(--color-border);
   background: var(--color-surface);
+  color: var(--color-text);
   padding: 0.5rem 0.9rem;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 button:hover:not(:disabled) {
-  background: #f0f1f4;
+  background: var(--color-hover-bg);
 }
 
 button:disabled {
@@ -67,13 +134,13 @@ textarea:focus-visible {
 }
 
 .btn-danger:hover:not(:disabled) {
-  background: #fdecea;
+  background: var(--color-error-bg);
 }
 
 .btn-link {
   border: none;
   background: none;
-  color: var(--color-primary);
+  color: var(--color-link);
   text-decoration: underline;
   padding: 0.5rem 0;
 }
@@ -94,7 +161,8 @@ textarea:focus-visible {
 }
 
 .app-header h1 {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
+  letter-spacing: -0.01em;
   margin: 0;
 }
 
@@ -102,6 +170,24 @@ textarea:focus-visible {
   margin: 0.25rem 0 0;
   color: var(--color-text-muted);
   font-size: 0.9rem;
+}
+
+.app-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  padding: 0;
+  font-size: 1.05rem;
+  border-radius: 999px;
+  flex-shrink: 0;
 }
 
 .filters {
@@ -133,6 +219,8 @@ textarea:focus-visible {
   border: 1px solid var(--color-border);
   border-radius: 6px;
   font-size: 0.9rem;
+  background: var(--color-surface);
+  color: var(--color-text);
 }
 
 .board-summary {
@@ -192,6 +280,8 @@ textarea:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+  box-shadow: 0 1px 3px var(--color-card-shadow);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .appointment-card.status-completed {
@@ -200,7 +290,7 @@ textarea:focus-visible {
 
 .appointment-card.status-cancelled {
   border-left-color: var(--color-cancelled);
-  background: #f8f8f9;
+  background: var(--color-cancelled-card-bg);
 }
 
 .appointment-card.status-cancelled .appointment-card-header h3 {
@@ -261,7 +351,7 @@ textarea:focus-visible {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 18, 25, 0.45);
+  background: var(--color-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -318,6 +408,8 @@ textarea:focus-visible {
   border-radius: 6px;
   font-size: 0.9rem;
   font-family: inherit;
+  background: var(--color-surface);
+  color: var(--color-text);
 }
 
 .field-error {
@@ -327,7 +419,7 @@ textarea:focus-visible {
 
 .form-error {
   color: var(--color-danger);
-  background: #fdecea;
+  background: var(--color-error-bg);
   border-radius: 6px;
   padding: 0.6rem 0.8rem;
   font-size: 0.85rem;
@@ -352,7 +444,7 @@ textarea:focus-visible {
   padding: 0.7rem 1rem;
   border-radius: 8px;
   color: white;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 14px var(--color-shadow);
 }
 
 .toast-success {
@@ -360,7 +452,7 @@ textarea:focus-visible {
 }
 
 .toast-error {
-  background: var(--color-danger);
+  background: var(--color-danger-bg);
 }
 
 .toast button {

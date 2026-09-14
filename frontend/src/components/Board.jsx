@@ -3,6 +3,7 @@ import AppointmentCard from "./AppointmentCard";
 export default function Board({
   appointments,
   loading,
+  slowLoad,
   error,
   hasActiveFilters,
   onEdit,
@@ -17,7 +18,11 @@ export default function Board({
     return (
       <div className="board-message" role="status">
         <span className="spinner" aria-hidden="true" />
-        <span>Loading appointments…</span>
+        <span>
+          {slowLoad
+            ? "Still loading… the server may be waking up from the free tier's idle sleep. This can take up to a minute."
+            : "Loading appointments…"}
+        </span>
       </div>
     );
   }
