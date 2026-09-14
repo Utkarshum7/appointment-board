@@ -5,6 +5,7 @@ import Filters from "./components/Filters";
 import AppointmentForm from "./components/AppointmentForm";
 import Toast from "./components/Toast";
 import ThemeToggle from "./components/ThemeToggle";
+import BackgroundDecoration from "./components/BackgroundDecoration";
 import { useTheme } from "./useTheme";
 
 const emptyFilters = { date: "", status: "" };
@@ -126,51 +127,54 @@ export default function App() {
   const hasActiveFilters = Boolean(filters.date || filters.status);
 
   return (
-    <div className="app">
-      <header className="app-header">
-        <div className="app-header-text">
-          <h1>Appointment Board</h1>
-          <p className="app-subtitle">Track, schedule, and manage your team's appointments.</p>
-        </div>
-        <div className="app-header-actions">
-          <ThemeToggle theme={theme} onToggle={toggleTheme} />
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={() => setFormState({ mode: "add" })}
-          >
-            + Add Appointment
-          </button>
-        </div>
-      </header>
+    <>
+      <BackgroundDecoration />
+      <div className="app">
+        <header className="app-header">
+          <div className="app-header-text">
+            <h1>Appointment Board</h1>
+            <p className="app-subtitle">Track, schedule, and manage your team's appointments.</p>
+          </div>
+          <div className="app-header-actions">
+            <ThemeToggle theme={theme} onToggle={toggleTheme} />
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => setFormState({ mode: "add" })}
+            >
+              + Add Appointment
+            </button>
+          </div>
+        </header>
 
-      <Filters filters={filters} onChange={setFilters} onClear={() => setFilters(emptyFilters)} />
+        <Filters filters={filters} onChange={setFilters} onClear={() => setFilters(emptyFilters)} />
 
-      <Board
-        appointments={appointments}
-        loading={loading}
-        slowLoad={slowLoad}
-        error={loadError}
-        hasActiveFilters={hasActiveFilters}
-        onRetry={loadAppointments}
-        onEdit={(appointment) => setFormState({ mode: "edit", appointment })}
-        onCancel={handleCancel}
-        onComplete={handleComplete}
-        onClearFilters={() => setFilters(emptyFilters)}
-        onAddNew={() => setFormState({ mode: "add" })}
-        busyAction={busyAction}
-      />
-
-      {formState && (
-        <AppointmentForm
-          initialValues={formState.mode === "edit" ? formState.appointment : null}
-          onSubmit={formState.mode === "edit" ? handleUpdate : handleCreate}
-          onCancel={() => setFormState(null)}
-          submitting={submitting}
+        <Board
+          appointments={appointments}
+          loading={loading}
+          slowLoad={slowLoad}
+          error={loadError}
+          hasActiveFilters={hasActiveFilters}
+          onRetry={loadAppointments}
+          onEdit={(appointment) => setFormState({ mode: "edit", appointment })}
+          onCancel={handleCancel}
+          onComplete={handleComplete}
+          onClearFilters={() => setFilters(emptyFilters)}
+          onAddNew={() => setFormState({ mode: "add" })}
+          busyAction={busyAction}
         />
-      )}
 
-      <Toast toast={toast} onDismiss={() => setToast(null)} />
-    </div>
+        {formState && (
+          <AppointmentForm
+            initialValues={formState.mode === "edit" ? formState.appointment : null}
+            onSubmit={formState.mode === "edit" ? handleUpdate : handleCreate}
+            onCancel={() => setFormState(null)}
+            submitting={submitting}
+          />
+        )}
+
+        <Toast toast={toast} onDismiss={() => setToast(null)} />
+      </div>
+    </>
   );
 }

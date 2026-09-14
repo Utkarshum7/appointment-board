@@ -21,6 +21,7 @@
   --color-overlay: rgba(15, 18, 25, 0.45);
   --color-shadow: rgba(0, 0, 0, 0.15);
   --color-card-shadow: rgba(20, 24, 32, 0.06);
+  --color-decoration: #ced2da;
 
   /* Status/background tokens — constant across themes, see note above. */
   --color-primary: #2f6fed;
@@ -53,6 +54,7 @@
     --color-overlay: rgba(0, 0, 0, 0.6);
     --color-shadow: rgba(0, 0, 0, 0.5);
     --color-card-shadow: rgba(0, 0, 0, 0.3);
+    --color-decoration: #3a4150;
     color-scheme: dark;
   }
 }
@@ -75,6 +77,7 @@
   --color-overlay: rgba(0, 0, 0, 0.6);
   --color-shadow: rgba(0, 0, 0, 0.5);
   --color-card-shadow: rgba(0, 0, 0, 0.3);
+  --color-decoration: #3a4150;
   color-scheme: dark;
 }
 
@@ -146,9 +149,97 @@ textarea:focus-visible {
 }
 
 .app {
+  position: relative;
+  z-index: 1;
   max-width: 960px;
   margin: 0 auto;
   padding: 1.5rem 1rem 4rem;
+}
+
+/* Decorative calendar motif filling the empty side margins on wide screens. Fixed,
+   inert, and stacked behind .app (z-index: 1 above) — never affects layout, clicks,
+   scrolling, or text selection. Hidden below 1024px, where there's no real margin
+   for it to occupy anyway. */
+.bg-decoration {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+@media (min-width: 1024px) {
+  .bg-decoration {
+    display: block;
+  }
+}
+
+.bg-decoration-shape {
+  position: absolute;
+  width: 220px;
+  height: 440px;
+  color: var(--color-decoration);
+  opacity: 0.55;
+}
+
+.bg-decoration-left {
+  left: -10px;
+  top: 8%;
+}
+
+.bg-decoration-right {
+  right: -10px;
+  top: 46%;
+  transform: scaleX(-1);
+}
+
+@keyframes bg-decoration-float-a {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate(-6px, 10px) rotate(-3deg);
+  }
+}
+
+@keyframes bg-decoration-float-b {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate(6px, -8px) rotate(3deg);
+  }
+}
+
+@keyframes bg-decoration-flow {
+  to {
+    stroke-dashoffset: -40;
+  }
+}
+
+.bg-decoration-float-a {
+  transform-origin: center;
+  animation: bg-decoration-float-a 16s ease-in-out infinite;
+}
+
+.bg-decoration-float-b {
+  transform-origin: center;
+  animation: bg-decoration-float-b 20s ease-in-out infinite;
+}
+
+.bg-decoration-flow {
+  animation: bg-decoration-flow 14s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bg-decoration-float-a,
+  .bg-decoration-float-b,
+  .bg-decoration-flow {
+    animation: none;
+  }
 }
 
 .app-header {
